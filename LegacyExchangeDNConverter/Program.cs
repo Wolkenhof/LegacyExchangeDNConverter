@@ -5,6 +5,7 @@ using System.Globalization;
 using CsvHelper.Configuration;
 using System.Text.RegularExpressions;
 using LegacyExchangeDNConverter.Common;
+using System.Diagnostics.CodeAnalysis;
 
 namespace LegacyExchangeDNConverter
 {
@@ -46,6 +47,14 @@ namespace LegacyExchangeDNConverter
             return result;
         }
 
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(User))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Configuration.DefaultClassMap<User>))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Configuration.MemberMap<User, string>))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Expressions.RecordManager))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Expressions.RecordCreatorFactory))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Expressions.RecordHydrator))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.Expressions.ExpressionManager))]
+        [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.TypeConversion.StringConverter))]
         static void Main(string[] args)
         {
             /*
