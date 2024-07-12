@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34525.116
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegacyExchangeDNConverter", "LegacyExchangeDNConverter\LegacyExchangeDNConverter.csproj", "{DFFE0BC1-98E4-45B4-9092-900811DF48A8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{DFFE0BC1-98E4-45B4-9092-900811DF48A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DFFE0BC1-98E4-45B4-9092-900811DF48A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DFFE0BC1-98E4-45B4-9092-900811DF48A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DFFE0BC1-98E4-45B4-9092-900811DF48A8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D42BDD5F-D966-4434-9087-B4C1268133BF}
+	EndGlobalSection
+EndGlobal
