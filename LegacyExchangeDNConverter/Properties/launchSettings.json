@@ -1,7 +1,8 @@
 {
   "profiles": {
     "LegacyExchangeDNConverter": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "/convert:\"C:\\Users\\jgu\\Desktop\\LegacyExchangeDN\\update.csv\""
     }
   }
 }

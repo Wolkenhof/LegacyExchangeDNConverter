@@ -22,6 +22,14 @@ namespace LegacyExchangeDNConverter
             [Name("ProxyAddresses2")]
             public string ProxyAddresses2 { get; set; }
         }
+        
+        public class User2
+        {
+            [Name("Name")]
+            public string Name { get; set; }
+            [Name("UserPrincipalName")]
+            public string UserPrincipalName { get; set; }
+        }
 
         private static bool _isDebug = false;
 
@@ -57,23 +65,26 @@ namespace LegacyExchangeDNConverter
         [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(CsvHelper.TypeConversion.StringConverter))]
         static void Main(string[] args)
         {
-            /*
+
             var imceaexAddress = "IMCEAEX-_o=Voelkel_ou=Exchange+20Administrative+20Group+20+28FYDIBOHF23SPDLT+29_cn=Recipients_cn=Leistikow+2C+20Britta+20-+20Voelkel+20GmbHc7c@eurprd04.prod.outlook.com";
             var x500Address = ConvertIMCEAEXToX500(imceaexAddress);
-            Console.WriteLine(x500Address);
-            */
+            //DebugConsole.WriteLine("Converted IMCEAEX: " + x500Address);
+            //DebugConsole.WriteLine("Example second:    x500:/o=ExchangeLabs/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)/cn=Recipients/cn=5e931242529445eea2b6c7b52051c052-Gruender");
+            //Console.WriteLine();
+
             var convertPath = string.Empty;
             var writePath = string.Empty;
+            var filterPath = string.Empty;
             var useConvert = false;
             var useWrite = false;
-            var useProxyAddress = 1;
+            var useFilter = false;
 #if DEBUG
             _isDebug = true;
 #endif
 
             if (args.Length == 0)
             {
-                Console.WriteLine("Syntax: LegacyExchangeDNConverter.exe /convert:<Path\\To\\CSV> /write:<Path\\To\\CSV> (/useproxyaddress2)");
+                Console.WriteLine("Syntax: LegacyExchangeDNConverter.exe /convert:<Path\\To\\CSV> /write:<Path\\To\\CSV>");
                 Environment.Exit(1);
             }
 
@@ -101,10 +112,16 @@ namespace LegacyExchangeDNConverter
 
                     useWrite = true;
                 }
-                else if (arg.Contains("/useproxyaddress2", StringComparison.OrdinalIgnoreCase))
+                else if (arg.StartsWith("/filter:", StringComparison.OrdinalIgnoreCase))
                 {
-                    DebugConsole.WriteLine("ProxyAddress2 wird nun verwendet!");
-                    useProxyAddress = 2;
+                    filterPath = arg.Substring("/filter:".Length);
+                    if (!File.Exists(filterPath))
+                    {
+                        DebugConsole.WriteLine("CSV Datei nicht gefunden: " + filterPath, ConsoleColor.Red);
+                        Environment.Exit(1);
+                    }
+
+                    useFilter = true;
                 }
             }
 
@@ -135,11 +152,17 @@ namespace LegacyExchangeDNConverter
                             organization = $"/{organization}";
 
                         // Set '/ou'
-                        var organizationUnit = "/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)";
+                        var organizationUnit = "";
+                        if (record.LegacyExchangeDN.Contains("/ou=Exchange Administrative Group"))
+                            organizationUnit = "/ou=Exchange Administrative Group (FYDIBOHF23SPDLT)";
+                        else if (record.LegacyExchangeDN.Contains("/ou=External"))
+                            organizationUnit = "/ou=External (FYDIBOHF25SPDLT)";
 
                         // Set '/cn'
+                        var name = record.Name;
+                        name = name.Replace(",", "");
                         var commonName1 = "/cn=Recipients";
-                        var commonName2 = $"/cn={record.Name}";
+                        var commonName2 = $"/cn={name}";
                         var x500 = $"X500:{organization}{organizationUnit}{commonName1}{commonName2}";
                         DebugConsole.WriteLine("Created X500: " + x500);
 
@@ -155,8 +178,10 @@ namespace LegacyExchangeDNConverter
                         {
                             match = matches[^1].Value;
                         }
-                        var x500WithCN = $"X500:{organization}{organizationUnit}{commonName1}{match}{commonName2}";
-                        DebugConsole.WriteLine("Created X500 (with CN): " + x500WithCN);
+
+                        //var secondX500O = "/o=ExchangeLabs";
+                        var x500WithCn = $"X500:{organization}{organizationUnit}{commonName1}{match}";
+                        DebugConsole.WriteLine("Created X500: " + x500WithCn);
 
                         // Update LegacyExchangeDN
                         var legacyExchangeDn = record.LegacyExchangeDN;
@@ -185,7 +210,7 @@ namespace LegacyExchangeDNConverter
                                                        legacyExchangeDn[endIndex..];
                                 }
 
-                                DebugConsole.WriteLine("Updated LegacyExchangeDN: " + legacyExchangeDn);
+                                //DebugConsole.WriteLine("Updated LegacyExchangeDN: " + legacyExchangeDn);
                             }
                         }
                         catch (Exception ex)
@@ -199,7 +224,7 @@ namespace LegacyExchangeDNConverter
                             Name = record.Name,
                             ProxyAddresses = x500,
                             LegacyExchangeDN = legacyExchangeDn,
-                            ProxyAddresses2 = x500WithCN
+                            ProxyAddresses2 = x500WithCn
                         });
 
                         Console.WriteLine();
@@ -235,18 +260,42 @@ namespace LegacyExchangeDNConverter
 
                 foreach (var record in records)
                 {
-                    DebugConsole.WriteLine("Modifiziere Daten für Benutzer: " + record.Name);
-                    ADManager.UpdateLegacyExchangeDN(record.Name, record.LegacyExchangeDN);
-                    switch (useProxyAddress)
+                    DebugConsole.WriteLine("Modifiziere Attribute für Benutzer: " + record.Name);
+                    //ADManager.UpdateLegacyExchangeDN(record.Name, record.LegacyExchangeDN);
+                    ADManager.UpdateProxyAddresses(record.Name, record.ProxyAddresses, record.ProxyAddresses2);
+                }
+            }
+            else if (useFilter)
+            {
+                var a = File.ReadAllLines("C:\\Users\\jgu\\Desktop\\LegacyExchangeDN\\missing.txt");
+                using var reader = new StreamReader(filterPath);
+                var csv = new CsvReader(reader, new CsvConfiguration(CultureInfo.InvariantCulture)
+                {
+                    HasHeaderRecord = true,
+                    HeaderValidated = null,
+                    MissingFieldFound = null
+                });
+                var records = csv.GetRecords<User2>().ToList();
+                var converted = new List<User2>();
+                foreach (var record in records)
+                {
+                    if (a.Contains(record.Name))
                     {
-                        case 1:
-                            ADManager.UpdateProxyAddresses(record.Name, record.ProxyAddresses);
-                            break;
-                        case 2:
-                            ADManager.UpdateProxyAddresses(record.Name, record.ProxyAddresses2);
-                            break;
+                        converted.Add(new User2()
+                        {
+                            UserPrincipalName = record.UserPrincipalName,
+                            Name = record.Name
+                        });
                     }
                 }
+
+                // Write to file
+                var destination = Path.Combine(Path.GetDirectoryName(filterPath)!, $"{Path.GetFileNameWithoutExtension(filterPath)}.updated.csv");
+
+                using var writer = new StreamWriter(destination);
+                using var newCsv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+                newCsv.WriteRecords(converted);
+                DebugConsole.WriteLine("Converting completed!", ConsoleColor.Green);
             }
             else
             {

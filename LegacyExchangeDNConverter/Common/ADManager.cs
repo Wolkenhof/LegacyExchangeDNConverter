@@ -5,7 +5,7 @@ namespace LegacyExchangeDNConverter.Common
 {
     public class ADManager
     {
-        public static void UpdateProxyAddresses(string name, string newProxyAddresses)
+        public static void UpdateProxyAddresses(string name, string newProxyAddresses, string newProxyAddresses2)
         {
             try
             {
@@ -17,8 +17,8 @@ namespace LegacyExchangeDNConverter.Common
                 {
                     if (result.GetUnderlyingObject() is DirectoryEntry de)
                     {
-                        de.Properties["proxyAddresses"].Clear();
                         de.Properties["proxyAddresses"].Add(newProxyAddresses);
+                        de.Properties["proxyAddresses"].Add(newProxyAddresses2);
                         de.CommitChanges();
                         var errorMessage = "Attribut 'proxyAddresses' wurden erfolgreich geändert!";
                         DebugConsole.WriteLine(errorMessage, ConsoleColor.Green);
